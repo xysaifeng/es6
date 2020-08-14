@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflect</title>
+</head>
+
+<body>
+    <script>
+        /*
+        // 1
+        var o = {}, f = function(){};
+        var r = Reflect.defineProperty(o, 'name', {
+            writable: true,
+            configurable: true,
+            enumerable: true,
+            value: 'tom'
+        })
+        console.log(o);
+        // console.log(f.name);
+        console.log(r); // true
+        */
+
+        // 2
+        /**/
+        /*
+        console.log(Reflect.has( o, 'name')); // true
+        console.log(Reflect.deleteProperty(o, 'name')); // true
+        console.log(o, '=========2'); // {}
+        */
+
+        /*
+        // 3.
+        var o = {};
+        var o2 = new Proxy(o, {
+            set: function (target, name, value, receiver) {
+                console.log('receiver: ', receiver);
+                var success = Reflect.set(target, name, value, receiver);
+                if (success) {
+                    console.log(`property ${name} on ${target} set to ${value}`);
+                }
+                return success;
+            }
+        })
+        // o.name = 'tom' // 无效
+        o2.name = 'jack';
+        */
+
+        /*
+        // 4.
+        var o = {age: 11, name: 'tom'};
+        var loggedObj = new Proxy(o, {
+            get(target, name) {
+                console.log('get', target, name); // get {age: 11, name: "tom"} name
+                return Reflect.get(target, name);
+            },
+            deleteProperty(target, name) {
+                console.log('delete '+ name); // delete name
+                return Reflect.deleteProperty(target, name)
+            },
+
+            has(target, name) {
+                console.log('has '+ name); // has age
+                return Reflect.has(target, name)
+            }
+        })
+        console.log(loggedObj, '============== loggedObj');
+        // console.log(o.name); // tom
+        console.log(loggedObj.name); // get {age: 11, name: "tom"} name // tom
+        console.log('age' in loggedObj); // has age // true
+        delete loggedObj.name; // delete name
+        */
+
+
+        // Reflect对象一共有 13 个静态方法。
+        /*
+        // 1.Releect.get(target, name, receiver); Reflect.get方法查找并返回target对象的name属性，如果没有该属性，则返回undefined
+        var o = {
+            foo: 1,
+            bar: 2,
+            get baz() {
+                return this.foo + this.bar;
+            },
+        }
+        console.log(Reflect.get(o, 'foo')); // 1
+        console.log(Reflect.get(o, 'bar')); // 2
+        console.log(Reflect.get(o, 'baz')); // 3
+        console.log(Reflect.get(o, 'bax')); // undefined
+        // 如果name属性部署了读取函数（getter），则读取函数的this绑定receiver，eg：
+        var myReceiver = {
+            foo: 11, bar: 90
+        }
+        console.log(Reflect.get(o, 'baz', myReceiver)); // 101
+        */
+
+        /*
+        // 2.Refect.set(target, name, value, receiver); Reflect.set方法设置target对象的name属性等于value。
+        var o = {
+            foo: 1,
+            set bar(val) {
+                console.log(this, '================== hhhh');
+                return this.foo = val;
+            }
+        }
+        console.log(o.foo); // 1
+        console.log(Reflect.set(o, 'foo', 2)); // true
+        console.log(o.foo); // 2
+        console.log(Reflect.set(o, 'bar', 3)); // true
+        console.log(o.foo); // 3
+        // 如果name属性设置了赋值函数，则赋值函数的this绑定receiver,eg:
+        var myReceiver = {
+            foo: 44,
+        }
+        console.log(Reflect.set(o, 'bar', 20, myReceiver));
+        console.log(o.foo); // 3
+        console.log(myReceiver); // {foo: 20}
+        console.log('===================================================================== br');
+        // 注意，如果Proxy对象和Reflect对象联合使用，前者拦截赋值操作，后者完成赋值操作的默认行为，而且传入了receiver，那么Reflect.set会触发Proxy.defineProperty拦截，eg：
+        let p = {
+            a: 'a',
+        };
+        let handler = {
+            set(target, key, value, receiver) {
+                console.log('========================================== 1');
+                 console.log(key, ' ============== key');
+                 console.log(value, ' ============== value');
+                 console.log(target === p, ' ============== target'); // true
+                // **receiver 指向当前proxy的实例obj**
+                 console.log(receiver === obj, '===================== receiver'); // ture
+                 console.log(this === handler, '=======================this'); // true
+                 console.log('========================================== 2');
+                 this.b = 'bbbbb'
+                //  Reflect.set(target, key+2, value, receiver);
+                //  console.log(p, '=============== end p');
+                //  console.log(receiver, '=============== end receiver');
+
+                 Reflect.set(target, key+3, value, );
+            },
+            defineProperty(target, key, attribute) {
+                console.log('========================================== 3');
+                console.log(this, 'ai');
+                console.log(target, '============ define target');
+                console.log(key, '============ define key');
+                console.log(attribute, '============ define attribute');
+                console.log('definedProperty ========='); 
+                Reflect.defineProperty(target, key+1, attribute)
+            }
+        }
+
+        let obj = new Proxy(p, handler);
+        obj.age = 99; //  ============== set // definedProperty =========
+        console.log(obj.age3);
+        console.log(p);
+        // 上面代码中，Proxy.set拦截里面使用了Reflect.set,而且传入了receiver,导致触发了Proxy.defineProperty拦截。这是因为Proxy.set的receiver参数总是指向当前的Proxy的实例（即上面的obj）,而Reflect.set一旦传入receiver，就会将属性赋值到receiver上面（即obj上），导致触发defineProperty拦截。如果Reflect.set没有传入receiver，那么就不会触发defineProperty拦截。
+        console.log('------------------------------');
+        let ob = {name: 'yaf'};
+        let os = {};
+        console.log(Reflect.set(ob, 'age', 55, os));
+        console.log(ob, 'ob');
+        console.log(os, 'os');
+        */
+
+
+        /*
+        // 3.Reflect.has(obj, name), 该方法对应name in obj里面的in运算符
+        var o = {foo: '123'};
+        // old
+        // in 运算符：表示如果指定的属性在指定的对象里或者在指定对象原型链上，则in 运算符返回true || Reflect.has(obj, name)同理
+        // instance 运算符：用于检测构造函数的portotype属性即原型对象是否出现在某个实例对象的原型链上
+        console.log('foo' in o, 1); // true
+        console.log(o instanceof Object, 2); // true
+        console.log('foo' in Object); // false
+        var o2 = {a: 'ads'};
+        var c = Object.create(o2);
+        console.log('a' in c, 3); // true
+        console.log('a' in o2, 4); // true
+        // var ob = {age: 99}
+        // var c = Object.create(ob);
+        // console.log('age' in c);// true
+
+        // new 
+        console.log(Reflect.has(o, 'foo'), 5); // true
+        console.log(Reflect.has(c, 'a'), 6); // true
+        console.log(Reflect.has(o2, 'a'), 7); // true
+        */
+
+
+        /**/
+        // 4.Reflec.deleteProperty(obj, name), 等同于delete obj[name],删除对象的属性
+        var o = {a: 'o', b: 'ds'};
+        // old 
+        console.log(delete o.s); // true
+        console.log(o);
+        // 该方法返回一个布尔值，如果删除成功或者被删除的属性不存在，返回true;删除失败返回false
+        console.log(Reflect.deleteProperty(o,'asd')); // true
+        console.log(Reflect.deleteProperty(o,'toString')); // true
+        console.log(o, 2);
+
+
+
+
+
+        /**/
+        /**/
+        /**/
+        /**/
+        /**/
+        /**/
+        /**/
+        /**/
+        /**/
+        /**/
+        /**/
+        /**/
+        
+    </script>
+</body>
+
+</html>

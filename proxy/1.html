@@ -3,9 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Proxy</title>
 </head>
 <body>
-    
+    <script>
+        var obj = new Proxy({}, {
+            get(target, propertyName, receiver) {
+                console.log(`getting ${propertyName} `);
+                return Reflect.get(target, propertyName, receiver)
+            },
+            set(target, propertyName, value, receiver) {
+                // console.log('receiver: ', receiver === obj);
+                console.log(`setting ${propertyName} -- ${value}`);
+                return Reflect.set(target, propertyName, value, receiver)
+            },
+        })
+        // obj.name = 'tom';
+        // obj.age = '12';
+        // console.log(obj.age);
+        obj.count = 1;
+        obj.count ++;
+
+    </script>
 </body>
 </html>

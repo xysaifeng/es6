@@ -7,7 +7,10 @@
 </head>
 <body>
     <script>
-        var obj = new Proxy({}, {
+        /*
+        // 1.
+        var o = {};
+        var obj = new Proxy(o, {
             get(target, propertyName, receiver) {
                 console.log(`getting ${propertyName} `);
                 return Reflect.get(target, propertyName, receiver)
@@ -18,12 +21,109 @@
                 return Reflect.set(target, propertyName, value, receiver)
             },
         })
-        // obj.name = 'tom';
-        // obj.age = '12';
-        // console.log(obj.age);
+        obj.name = 'tom';
+        obj.age = '12';
+        console.log(obj.age);
         obj.count = 1;
         obj.count ++;
+        console.log(obj);
+        console.log(o);
+        */
 
+        /*
+        // 2.proxy实例也可作为其他对象的原型对象
+        var p = new Proxy({}, {
+            get(target, propKey){
+                return 33;
+            }
+        });
+        var obj = Object.create(p);
+        console.log(obj.s); // 33
+        console.log(obj);
+        */
+
+        /*
+        // 3.同一个拦截器函数，可以设置拦截多个操作：
+        var handler = {
+            get(target, name) {
+                if(name === 'prototype') {
+                    return Object.prototype;
+                }
+                return 'hello ' + name;
+            },
+            apply(target, thisBinding, args) {
+                console.log(thisBinding, '====================== thisBinding'); // {a: 99}
+                console.log(args, '====================== args'); // [55, 66] 
+                return args[0]
+            },
+            construct(target, arg) {
+                console.log(arg, '====================== arg');
+                return { value: arg[1] };
+            }
+        };
+        var fp = new Proxy(function(x, y) {
+            return x + y;
+        }, handler);
+
+        console.log(fp, '=========fp');
+        console.log(fp(2, 4)); // 2
+        var s = new fp(5, 6);
+        console.log(s, '=================s');
+        console.log(fp.prototype === Object.prototype); // true
+        console.log(fp.foo); // hello foo
+        // fp.call({a: 88}, 9,7) // error: TypeError: fp.call is not a function
+        console.log(' Reflect.apply(fp, {a: 99}, [55, 66]);: ',  Reflect.apply(fp, {a: 99}, [55, 66])); // 55
+        */
+
+
+        /**/
+        // Proxy实例的方法
+        // 1.get()该方法用于拦截某个属性的读取操作，可以接受三个参数，依次是目标对象，属性名和proxy实例本身（严格来说，是操作行为所针对的对象），其中最后一个参数可选。
+        var person = {
+            name: '张三'
+        };
+        var p = new Proxy(person, {
+            get(target, propKey) {
+                if(propKey in target) {
+                    return target[propKey];
+                }
+                // throw new ReferenceError('Prop name \'' + propKey + '\' does not exist')
+            }
+        })
+        console.log(p.name); // 张三
+        // console.log(p.a); //  ReferenceError: Prop name 'a' does not exist
+        // 如果没有这个拦截函数，访问不存在的属性，只会返回undefined
+        console.log(p.s); // r90 如果注释了这里是undefined
+
+        // get方法可以继承
+        var proto = new Proxy({a: 12}, {
+            get(target, propertyKey, receiver) {
+                console.log('GET '+propertyKey);
+                return target[propertyKey]
+            }
+        })
+        var o = Object.create(proto, {
+            name: {
+                writable: false,
+                value: 'aqiuo'
+            }
+        });
+        console.log(o.foo); // 1 GET foo  2 undefined
+        console.log(o);
+        console.log(o.__proto__ === proto, '============ compare'); // false
+        console.log(o.__proto__ === Object.prototype, '============ compare2'); // true
+        console.log(Reflect.ownKeys(o.__proto__));
+        console.log('--------------------');
+        console.log(o.name); // 读取自身的属性 不会打印 GET
+        console.log(o.a); //  读取原型上的的属性 会打印 GET a
+        // 上面的代码中，拦截定义在prototype对象上面，所以如果读取o对象继承的属性时（上面是 a）,拦截会生效
+
+
+
+
+        /**/
+        /**/
+        /**/
     </script>
 </body>
 </html>

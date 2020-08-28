@@ -7,75 +7,76 @@
     </head>
     <body>
         <script>
+            //    'use strict';
             /*
-        // 1.
-        var o = {};
-        var obj = new Proxy(o, {
-            get(target, propertyName, receiver) {
-                console.log(`getting ${propertyName} `);
-                return Reflect.get(target, propertyName, receiver)
-            },
-            set(target, propertyName, value, receiver) {
-                // console.log('receiver: ', receiver === obj);
-                console.log(`setting ${propertyName} -- ${value}`);
-                return Reflect.set(target, propertyName, value, receiver)
-            },
-        })
-        obj.name = 'tom';
-        obj.age = '12';
-        console.log(obj.age);
-        obj.count = 1;
-        obj.count ++;
-        console.log(obj);
-        console.log(o);
-        */
+            // 1.
+            var o = {};
+            var obj = new Proxy(o, {
+                get(target, propertyName, receiver) {
+                    console.log(`getting ${propertyName} `);
+                    return Reflect.get(target, propertyName, receiver)
+                },
+                set(target, propertyName, value, receiver) {
+                    // console.log('receiver: ', receiver === obj);
+                    console.log(`setting ${propertyName} -- ${value}`);
+                    return Reflect.set(target, propertyName, value, receiver)
+                },
+            })
+            obj.name = 'tom';
+            obj.age = '12';
+            console.log(obj.age);
+            obj.count = 1;
+            obj.count ++;
+            console.log(obj);
+            console.log(o);
+            */
 
             /*
-        // 2.proxy实例也可作为其他对象的原型对象
-        var p = new Proxy({}, {
-            get(target, propKey){
-                return 33;
-            }
-        });
-        var obj = Object.create(p);
-        console.log(obj.s); // 33
-        console.log(obj);
-        */
-
-            /*
-        // 3.同一个拦截器函数，可以设置拦截多个操作：
-        var handler = {
-            get(target, name) {
-                if(name === 'prototype') {
-                    return Object.prototype;
+            // 2.proxy实例也可作为其他对象的原型对象
+            var p = new Proxy({}, {
+                get(target, propKey){
+                    return 33;
                 }
-                return 'hello ' + name;
-            },
-            apply(target, thisBinding, args) {
-                console.log(thisBinding, '====================== thisBinding'); // {a: 99}
-                console.log(args, '====================== args'); // [55, 66] 
-                return args[0]
-            },
-            construct(target, arg) {
-                console.log(arg, '====================== arg');
-                return { value: arg[1] };
-            }
-        };
-        var fp = new Proxy(function(x, y) {
-            return x + y;
-        }, handler);
+            });
+            var obj = Object.create(p);
+            console.log(obj.s); // 33
+            console.log(obj);
+            */
 
-        console.log(fp, '=========fp');
-        console.log(fp(2, 4)); // 2
-        var s = new fp(5, 6);
-        console.log(s, '=================s');
-        console.log(fp.prototype === Object.prototype); // true
-        console.log(fp.foo); // hello foo
-        // fp.call({a: 88}, 9,7) // error: TypeError: fp.call is not a function
-        console.log(' Reflect.apply(fp, {a: 99}, [55, 66]);: ',  Reflect.apply(fp, {a: 99}, [55, 66])); // 55
-        */
+            /*
+            // 3.同一个拦截器函数，可以设置拦截多个操作：
+            var handler = {
+                get(target, name) {
+                    if(name === 'prototype') {
+                        return Object.prototype;
+                    }
+                    return 'hello ' + name;
+                },
+                apply(target, thisBinding, args) {
+                    console.log(thisBinding, '====================== thisBinding'); // {a: 99}
+                    console.log(args, '====================== args'); // [55, 66]
+                    return args[0]
+                },
+                construct(target, arg) {
+                    console.log(arg, '====================== arg');
+                    return { value: arg[1] };
+                }
+            };
+            var fp = new Proxy(function(x, y) {
+                return x + y;
+            }, handler);
 
-            /**/
+            console.log(fp, '=========fp');
+            console.log(fp(2, 4)); // 2
+            var s = new fp(5, 6);
+            console.log(s, '=================s');
+            console.log(fp.prototype === Object.prototype); // true
+            console.log(fp.foo); // hello foo
+            // fp.call({a: 88}, 9,7) // error: TypeError: fp.call is not a function
+            console.log(' Reflect.apply(fp, {a: 99}, [55, 66]);: ',  Reflect.apply(fp, {a: 99}, [55, 66])); // 55
+            */
+
+            /*
             // Proxy实例的方法
             // 1.get()该方法用于拦截某个属性的读取操作，可以接受三个参数，依次是目标对象，属性名和proxy实例本身（严格来说，是操作行为所针对的对象），其中最后一个参数可选。
             var person = {
@@ -216,11 +217,158 @@
             document.body.appendChild(el)
 
             // 下面是get方法的第三参数的例子，它总是指向原始的读操作所在的那个对象，一般情况下就是Proxy的实例。
-            
+            console.log('=================================== hr');
+            let o2 = {};
+            const proxy = new Proxy(o2, {
+                get(target, propKey, receiver) {
+                    console.log(this);
+                    console.log(receiver);
+                    console.log(target === o2); // true
+                    console.log(receiver === this); // false
+                    console.log(receiver === proxy); // true
+                    return receiver;
+                },
+                set() {
+
+                }
+            });
+            console.log(proxy.s === proxy); // true
+            // 上面代码中，proxy对象的s属性是proxy提供的，所以receiver指向proxy对象
+
+            console.log('======================== hr2');
+            const p2 = new Proxy({}, {
+                get(target, propKey, receiver) {
+                    return receiver;
+                }
+            });
+            const d = Object.create(p2);
+            console.log(d.a === p2); // false
+            console.log(d.a === d); // true
+            // ** 上面代码中，d对象本身没有a属性，所以读取d.a的时候，回去d的原型p2对象上去找。这时，receiver就指向d,代码原始读操作所在的那个对象。
+
+            // 如果一个属性不可配置*且*不可写，则Proxy不能修改该属性，否则通过Proxy对象访问该属性会报错：
+            console.log('============================== hr3');
+            const t = {};
+            Reflect.defineProperty(t, 'foo', {
+                value: 10,
+                enumerable: true,
+                writable: false,
+                configurable: false
+            });
+            console.log(t, '=============t');
+            const p3 = new Proxy(t, {
+                get(target, key) {
+                    // return 'abc' + target[key] ? target[key] : '';
+                    // return target[key];
+                    return 'abc' + target[key];
+                }
+            });
+            console.log(p3.a); // 'abcundefined'
+            console.log(p3.foo); // TypeError: 'get' on proxy: property 'foo' is a read-only and non-configurable data property on the proxy target but the proxy did not return its actual value (expected '10' but got 'abc')
+            */
 
             /**/
+            // set():用来某个属性的赋值操作，接受四个参数，依次为目标对象，属性名， 属性值， Proxy实例本身，其中最后一个参数可选。
+            // 假如person对象有个age属性，该属性应该是一个不大于200的整数，那么可以使用Proxy保证age的属性值符合要求。
+            let validator = {
+                set(target, prop, value) {
+                    if (prop === "age") {
+                        if (!Number.isInteger(value)) {
+                            throw new TypeError("value id needed Integer");
+                        }
+                        if (value > 200) {
+                            throw new RangeError("the age seems invalid");
+                        }
+                        target[prop] = value;
+                        return true;
+                    }
+                },
+            };
+            let person = new Proxy({}, validator);
+            // person.a = 10; // 无反应
+            // person.age = 310 // RangeError: the age seems invalid
+            // person.age = '310' // TypeError: value id needed Integer
+            person.age = -1;
+            console.log(person);
+
+            // 有时我们会在对象上设置内部属性，属性名的第一个字符串是下划线开头，表示这些属性不应该被外部使用。结合get和set方法，就可以防止这些内部属性被外部读写。
+            const t = {};
+            let handler = {
+                get(target, prop) {
+                    invariant(prop, "get");
+                    return target[prop];
+                },
+                set(target, prop, value) {
+                    invariant(prop, "set");
+                    target[prop] = value;
+                },
+            };
+            const p = new Proxy(t, handler);
+            function invariant(prop, action) {
+                if (prop.startsWith("_")) {
+                    throw new Error(
+                        `Invalid attempt to ${action} privid "${prop}" property`
+                    );
+                }
+            }
+
+            // p._a; // Error: Invalid attempt to get privid "_a" property
+            // p._a = 10; // Error: Invalid attempt to set privid "_a" property
+            // 上面代码中，只要读写的属性名的第一个字符是下划线，一律抛错，从而达到禁止读写内部属性的目的。
+
+            // 下面是set方法的第四个参数的例子：
+            console.log("--------------------------------------h1");
+            const p1 = new Proxy(
+                {},
+                {
+                    set(target, prop, value, receiver) {
+                        target[prop] = receiver;
+                    },
+                }
+            );
+            p1.foo = "aqiu";
+            console.log(p1.foo === p1); // true
+            // 上面代码中，set方法的第四个参数receiver，指的是原始的操作行为所在的那个对象，一般情况下是Proxy实例本身，请看下面的例子：
+            const p2 = new Proxy(
+                {},
+                {
+                    set(target, prop, value, receiver) {
+                        target[prop] = receiver;
+                    },
+                }
+            );
+            let myObj = {};
+            let r = Reflect.setPrototypeOf(myObj, p2);
+            console.log(r, "================r"); // true
+            myObj.fzz = 100;
+            console.log(myObj.fzz === myObj); // true
+            // 上面代码中，设置myObj.fzz属性的值时，myObj并没有fzz属性，隐藏引擎会到myObj的原型链去找fzz属性。myObj的原型对象p2是一个Proxy实例，设置它的foo属性会触发set方法，这时，第四个参数receiver就指向原始赋值行为的myObj对象。
+
+            // 注意，如果目标对象自身的某个属性，不可写且不可配置，那么set方法将不起作用。
+            console.log("------------------------------------------ h2");
+            const obj = {};
+            Reflect.defineProperty(obj, "foo", {
+                value: "hello",
+                writable: false,
+                configurable: true,
+            });
+            const p3 = new Proxy(obj, {
+                set(target, prop, value, receiver) {
+                    "use strict";
+                    console.log(prop, value, "========================898989");
+                    target[prop] = value;
+                    // return true
+                },
+            });
+            console.log(p3, "==================p3");
+            p3.foo = 100;
+            console.log(p3.foo); // hello
+            // 上面代码中，obj.foo属性不可写，Proxy对这个属性的set代理不会生效。注意严格模式下，会报错： TypeError: Cannot assign to read only property 'foo' of object '#<Object>'
+            // 如果row 10 启用严格模式，则报错：TypeError: 'set' on proxy: trap returned falsish for property 'foo'
+
             /**/
             /**/
         </script>
     </body>
 </html>
+>>>>>>> 5c566572216fa1e7d583aef4062a7e823a91325e

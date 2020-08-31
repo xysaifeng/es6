@@ -267,7 +267,7 @@
             console.log(p3.foo); // TypeError: 'get' on proxy: property 'foo' is a read-only and non-configurable data property on the proxy target but the proxy did not return its actual value (expected '10' but got 'abc')
             */
 
-            /**/
+            /*
             // set():用来某个属性的赋值操作，接受四个参数，依次为目标对象，属性名， 属性值， Proxy实例本身，其中最后一个参数可选。
             // 假如person对象有个age属性，该属性应该是一个不大于200的整数，那么可以使用Proxy保证age的属性值符合要求。
             let validator = {
@@ -365,10 +365,102 @@
             console.log(p3.foo); // hello
             // 上面代码中，obj.foo属性不可写，Proxy对这个属性的set代理不会生效。注意严格模式下，会报错： TypeError: Cannot assign to read only property 'foo' of object '#<Object>'
             // 如果row 10 启用严格模式，则报错：TypeError: 'set' on proxy: trap returned falsish for property 'foo'
+            */
 
+            /*
+            // construct方法用于拦截new命令，下面是拦截对象的写法：
+            var handler = {
+                construct(target, args, newTarget) {
+                    return new target(...args);
+                }
+            }
+            // construct方法接受三个参数：target：目标对象，args:构造函数的参数对象，newTarget:创建实例对象时，new命令作用的构造函数（下面是p）;
+            var p = new Proxy(function() {}, {
+                construct: function(target, args, newTarget) {
+                    console.log(target, '==============tttt')
+                    console.log(args, '===============args');
+                    console.log(newTarget, '===============newTarget');
+                    return { value: args[0]}
+                }
+            });
+            console.log(new p(3).value); // 30
+
+            // cosntruct方法的返回必须是一个对象，否则会报错。
+            var p2 = new Proxy(function() {}, {
+                construct(target, args) {
+                    return 'ad';
+                }
+            })
+            // console.log(new p2(9)); //  TypeError: 'construct' on proxy: trap returned non-object ('ad')
+            */
+
+            /*
+            // deleteProperty()
+            // deleteProperty方法用于拦截delete操作。如果这个方法返回false或者抛出错误，当前属性就无法被delete命令删除。
+            var target = {
+                _prop: 'a',
+                prop: 'b'
+            };
+            Reflect.defineProperty(target, '_key', {
+                value: 99,
+                configurable: false
+            })
+            var handler = {
+                deleteProperty(target, key) {
+                    // 'use strict'
+                    // return false
+                    invariant(key, 'delete');
+                    delete target[key];
+                    return false;
+                }
+            }
+            function invariant(key, action) {
+                if(key[0] === '_') {
+                    throw new Error(`Invalidate attempt to ${action} private "${key}" property`);
+                }
+            }
+            var p = new Proxy(target, handler);
+            // delete p._prop
+            // console.log('delete p._prop: ', delete p._prop); // Error: Invalidate attempt to delete private "_prop" property
+            // 上面代码中，deleteProperty方法拦截了delete操作符，删除第一个字符为下划线的属性会报错。
+
+            // delete p._key; // 严格模式下：目标对象自身的不可配置的属性，不能被deleteProperty方法删除，否则报错。否则会禁默失败（删除失败且没有提示信息）
+            */
+
+            
+            /**/
+            // defineProperty()
+            // 该方法拦截了Object.defineProperty()操作。
+            var target = {};
+            // Reflect.preventExtensions(target);
+            Reflect.defineProperty(target, 'name', {
+                value: 'tom',
+                writable: true,
+                configurable: true
+            })
+            var handler = {
+                defineProperty(target, key, descriptor) {
+                    // 'use strict'
+                    console.log('descriptor: ', descriptor);
+                    console.log('target: ', target);
+                    console.log('key: ', key);
+                    return Object.defineProperty(target, key, descriptor)
+                    // return false;
+                }
+            }
+            var p = new Proxy(target, handler);
+            p.foo = '100';
+            p.name = 'lisan';
+            console.log(p);
+
+
+
+            /**/
+            /**/
+            /**/
             /**/
             /**/
         </script>
     </body>
 </html>
->>>>>>> 5c566572216fa1e7d583aef4062a7e823a91325e
+<!--  -->

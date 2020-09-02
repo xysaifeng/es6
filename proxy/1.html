@@ -76,6 +76,7 @@
             console.log(' Reflect.apply(fp, {a: 99}, [55, 66]);: ',  Reflect.apply(fp, {a: 99}, [55, 66])); // 55
             */
 
+
             /*
             // Proxy实例的方法
             // 1.get()该方法用于拦截某个属性的读取操作，可以接受三个参数，依次是目标对象，属性名和proxy实例本身（严格来说，是操作行为所针对的对象），其中最后一个参数可选。
@@ -267,8 +268,9 @@
             console.log(p3.foo); // TypeError: 'get' on proxy: property 'foo' is a read-only and non-configurable data property on the proxy target but the proxy did not return its actual value (expected '10' but got 'abc')
             */
 
+
             /*
-            // set():用来某个属性的赋值操作，接受四个参数，依次为目标对象，属性名， 属性值， Proxy实例本身，其中最后一个参数可选。
+            // 2.set():用来某个属性的赋值操作，接受四个参数，依次为目标对象，属性名， 属性值， Proxy实例本身，其中最后一个参数可选。
             // 假如person对象有个age属性，该属性应该是一个不大于200的整数，那么可以使用Proxy保证age的属性值符合要求。
             let validator = {
                 set(target, prop, value) {
@@ -367,9 +369,9 @@
             // 如果row 10 启用严格模式，则报错：TypeError: 'set' on proxy: trap returned falsish for property 'foo'
             */
 
-            
+
             /*
-            // apply()方法拦截函数的调用、call和apply的操作。接受三个参数，分别是目标对象，目标对象的上下文对象（this）和目标对象的参数数组。
+            // 3.apply()方法拦截函数的调用、call和apply的操作。接受三个参数，分别是目标对象，目标对象的上下文对象（this）和目标对象的参数数组。
             var handler = {
                 apply(target, context, args) {
                     console.log('args: ', args);
@@ -418,7 +420,7 @@
 
 
             /*
-            // has()
+            // 4.has()
             // has方法用来拦截HasProperty操作，即判断对象是否具有某个属性时，这个方法会很生效。典型的操作就是in运算符。
             // has方法有两个参数，分别是目标对象和要查询的属性名。
             var target = {
@@ -493,12 +495,200 @@
             // 上面代码中has拦截只对in运算符生效，对for...in循环不生效，导致不符合要求的属性没被for...in循环排出掉。
             */
 
+
+            /*
+            // 5.construct方法用于拦截new命令，下面是拦截对象的写法：
+            var handler = {
+                construct(target, args, newTarget) {
+                    return new target(...args);
+                }
+            }
+            // construct方法接受三个参数：target：目标对象，args:构造函数的参数对象，newTarget:创建实例对象时，new命令作用的构造函数（下面是p）;
+            var p = new Proxy(function() {}, {
+                construct: function(target, args, newTarget) {
+                    console.log(target, '==============tttt')
+                    console.log(args, '===============args');
+                    console.log(newTarget, '===============newTarget');
+                    return { value: args[0]}
+                }
+            });
+            console.log(new p(3).value); // 30
+
+            // cosntruct方法的返回必须是一个对象，否则会报错。
+            var p2 = new Proxy(function() {}, {
+                construct(target, args) {
+                    return 'ad';
+                }
+            })
+            // console.log(new p2(9)); //  TypeError: 'construct' on proxy: trap returned non-object ('ad')
+            */
+
+            /*
+            // 6.deleteProperty()
+            // deleteProperty方法用于拦截delete操作。如果这个方法返回false或者抛出错误，当前属性就无法被delete命令删除。
+            var target = {
+                _prop: 'a',
+                prop: 'b'
+            };
+            Reflect.defineProperty(target, '_key', {
+                value: 99,
+                configurable: false
+            })
+            var handler = {
+                deleteProperty(target, key) {
+                    // 'use strict'
+                    // return false
+                    invariant(key, 'delete');
+                    delete target[key];
+                    return false;
+                }
+            }
+            function invariant(key, action) {
+                if(key[0] === '_') {
+                    throw new Error(`Invalidate attempt to ${action} private "${key}" property`);
+                }
+            }
+            var p = new Proxy(target, handler);
+            // delete p._prop
+            // console.log('delete p._prop: ', delete p._prop); // Error: Invalidate attempt to delete private "_prop" property
+            // 上面代码中，deleteProperty方法拦截了delete操作符，删除第一个字符为下划线的属性会报错。
+
+            // delete p._key; // 严格模式下：目标对象自身的不可配置的属性，不能被deleteProperty方法删除，否则报错。否则会禁默失败（删除失败且没有提示信息）
+            */
+
+            
+            /*
+            // 7.defineProperty()
+            // 该方法拦截了Object.defineProperty()操作。
+            var target = {};
+            
+            // Reflect.preventExtensions(target);
+
+            Reflect.defineProperty(target, 'name', {
+                value: 'tom',
+                writable: false,
+                configurable: false
+            })
+            var handler = {
+                defineProperty(target, key, descriptor) {
+                    // 'use strict'
+                    console.log('descriptor: ', descriptor);
+                    console.log('target: ', target);
+                    console.log('key: ', key);
+                    return Object.defineProperty(target, key, descriptor)
+                    return true;
+                }
+            }
+            var p = new Proxy(target, handler);
+            p.foo = '100';
+            p.name = 'lisan';
+            console.log(p);
+            // 上面代码中，defineProperty()方法内部没有任何操作，只返回false，导致添加新属性总是无效（p.foo = 100）。注意，这里的false只是用来提示操作失败，本身并不能阻止添加新属性。
+            // 注意：如果目标对象不可扩展（non-extensible），则defineProperty()不能增加目标对象上不存在的属性，否则会报错。另外，如果目标对象的某个属性不可写（writable）或不可配置（configurable）,则defineProperty方法不得改变这两个设置。(如果name的writable为false，则handler的defineProperty不会拦截，即不会打印console)
+            */
+
+
+            /*
+            // 8.getOwnPropertyDescriptor()
+            // 该方法拦截Object.getOwnPropertyDescriptor，返回一个属性描述对象或undefined。
+            var handler = {
+                getOwnPropertyDescriptor(target, key) {
+                    if(key[0] === '_') return;
+                    return Object.getOwnPropertyDescriptor(target, key);
+                }
+            };
+            var target = { _foo: 'foo', bar: 'bar' };
+            var p = new Proxy(target, handler);
+            console.log(Reflect.getOwnPropertyDescriptor(p, 'name')); // undefined
+            console.log(Reflect.getOwnPropertyDescriptor(p, '_foo')); // undefined
+            console.log(Reflect.getOwnPropertyDescriptor(p, 'bar')); // {value: "bar", writable: true, enumerable: true, configurable: true}
+            // handler.getOwnPropertyDescriptor()方法对于第一个字符为下划线的属性名会返回undefined。
+            */
+
+
+            /*
+            // 9.getPrototypeOf()
+            // 该方法用来获取原型对象，拦截一下操作：
+            // Object.prototype.__proto__
+            // Object.prototype.isPrototypeOf()
+            // Object.getPrototypeOf()
+            // Reflect.getPrototypeOf()
+            // instanceof
+            var proto = {a:1};
+            var target = {b: 12}
+            // Reflect.preventExtensions(target)
+            Object.seal(target)
+            var p = new Proxy(target, {
+                getPrototypeOf(target) {
+                    console.log(target);
+                    // return 1; // TypeError: 'getPrototypeOf' on proxy: trap returned neither object nor null
+                    // return null
+                    // return proto; // TypeError: 'getPrototypeOf' on proxy: proxy target is non-extensible but the trap did not return its actual prototype
+                    return Reflect.getPrototypeOf(target); // 必须返回目标对象的原型对象。
+                }
+            })
+            console.log(Object.getPrototypeOf(p)); // 
+            console.log(Object.getPrototypeOf(p) === proto); // true
+            // getPrototypeOf()方法拦截Object.getPrototypeOf()，返回proto对象。
+
+            // 注意：getPrototypeOf()方法的返回值必须是对象或者null，否则会报错。如果目标对象不可扩展（non-extensible），getPrototypeOf()方法必须返回目标对象的原型对象。
+            */
+
+
+            /*
+            // 10.isExtensible()
+            // 该方法拦截Object.isExtensible()操作。
+            var t = {};
+            // Reflect.preventExtensions(t) // error
+            var p = new Proxy(t, {
+                isExtensible(target) {
+                    console.log('called');
+                    // return true; // 如果返回true，则目标对象t不能被禁止扩展或者代理实例对象p不能被禁止扩展，否则报错
+                    return false; // 如果返回false，则目标对象t是禁止扩展或者代理实例对象p是禁止扩展状态，否则报错
+                }
+            })
+            // Reflect.preventExtensions(p) // error
+            console.log(Object.isExtensible(p)); // true
+            // 上面代码设置了isExtensible方法，在调用Object.isExtensible时会打印called
+            // 注意：该方法只能返回布尔值，否则返回值会自动转化为布尔值。
+            // 该方法有一个强制性，他的返回值必须与目标对象的isExtensible属性一致，否则会抛出错误。
+            // Object.isExtensible(proxy) === Object.isExtensible(target)
+            */
+
+
             /**/
-            /**/
-            /**/
-            /**/
-            /**/
-            /**/
+            // 11.ownKeys()
+            // 用来拦截对象自身属性的读取操作，拦截以下操作：
+            // Object.getOwnPropertyNames()
+            // Object.getOwnPropertySymbols()
+            // Object.keys()
+            // for...in循环
+
+            // 拦截Object.keys()
+            var target = {
+                a: 'a',
+                b: 'b',
+                c: 'c',
+            };
+            var p = new Proxy(target, {
+                ownKeys(target) {
+                    console.log(target, 'target');
+                    // return [1] // TypeError: 1 is not a valid property name
+                    // return [false] // TypeError: 1 is not a valid property name
+                    // return [] // []
+                    // return ['1'] // []
+                    // return ['as'] // []
+                    // return 2 // TypeError: CreateListFromArrayLike called on non-object 返回的不是数组
+                    // return ['c', 1] // TypeError: 1 is not a valid property name
+                    return ['c', ] // ['c']
+                }
+            })
+            console.log(Object.keys(p));
+            // 上面代码中拦截了对于target对象的Object.keys()操作，只返回a、b、c三个属性的c属性。
+            // 规则：1.必须返回数组；2.返回数组如果有长度，则数组元素是有效的属性键名，如果是无效键名或包含无效键名如：[1],[false]为无效键名,均报错。3、如果包含的是有效键名但该键名不在目标对象自身属性中如：['as'],则返回一个空数组。
+
+
+
             /**/
             /**/
         </script>

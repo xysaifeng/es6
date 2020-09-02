@@ -435,12 +435,12 @@
             // Reflect.preventExtensions(target);
             Reflect.defineProperty(target, 'name', {
                 value: 'tom',
-                writable: true,
-                configurable: true
+                writable: false,
+                configurable: false
             })
             var handler = {
                 defineProperty(target, key, descriptor) {
-                    // 'use strict'
+                    'use strict'
                     console.log('descriptor: ', descriptor);
                     console.log('target: ', target);
                     console.log('key: ', key);
